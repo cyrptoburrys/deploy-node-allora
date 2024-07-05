@@ -1,6 +1,7 @@
 package invariant_test
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -27,13 +28,13 @@ func createTopic(wg *sync.WaitGroup, m *testCommon.TestConfig, actor Actor, data
 		PNorm:           alloraMath.NewDecFromInt64(3),
 		AlphaRegret:     alloraMath.NewDecFromInt64(1),
 		AllowNegative:   true,
-		Tolerance:       alloraMath.MustNewDecFromString("0.01"),
 	}
 
 	txResp, err := broadcastWithActor(m, actor, createTopicRequest)
 	require.NoError(m.T, err)
 
-	_, err = m.Client.WaitForTx(m.Ctx, txResp.TxHash)
+	ctx := context.Background()
+	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
 	createTopicResponse := &emissionstypes.MsgCreateNewTopicResponse{}

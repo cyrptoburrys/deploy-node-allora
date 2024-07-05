@@ -1,6 +1,7 @@
 package invariant_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
@@ -47,7 +48,8 @@ func getActorName(seed int, actorIndex int) string {
 // so make sure to check the mutex before sending the tx
 func broadcastWithActor(m *testCommon.TestConfig, actor Actor, msgs ...sdktypes.Msg) (cosmosclient.Response, error) {
 	actor.lock.Lock()
-	ret, err := m.Client.BroadcastTx(m.Ctx, actor.acc, msgs...)
+	ctx := context.Background()
+	ret, err := m.Client.BroadcastTx(ctx, actor.acc, msgs...)
 	actor.lock.Unlock()
 	return ret, err
 }

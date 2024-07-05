@@ -1,6 +1,7 @@
 package invariant_test
 
 import (
+	"context"
 	"fmt"
 
 	cosmossdk_io_math "cosmossdk.io/math"
@@ -78,7 +79,8 @@ func fundActors(
 		},
 		Outputs: outputs,
 	}
-	_, err := m.Client.BroadcastTx(m.Ctx, sender.acc, sendMsg)
+	ctx := context.Background()
+	_, err := m.Client.BroadcastTx(ctx, sender.acc, sendMsg)
 	if err != nil {
 		m.T.Log("Error worker address: ", err)
 		return err
@@ -100,8 +102,9 @@ func fundActors(
 // get the amount of money to give each actor in the simulation
 // based on how much money the faucet currently has
 func getPreFundAmount(m *testCommon.TestConfig, numActors int) (cosmossdk_io_math.Int, error) {
+	ctx := context.Background()
 	faucetBal, err := m.Client.QueryBank().
-		Balance(m.Ctx, banktypes.NewQueryBalanceRequest(sdktypes.MustAccAddressFromBech32(m.FaucetAddr), params.DefaultBondDenom))
+		Balance(ctx, banktypes.NewQueryBalanceRequest(sdktypes.MustAccAddressFromBech32(m.FaucetAddr), params.DefaultBondDenom))
 	if err != nil {
 		return cosmossdk_io_math.ZeroInt(), err
 	}
