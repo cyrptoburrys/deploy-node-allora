@@ -11,7 +11,7 @@ import (
 )
 
 // Use actor to create a new topic
-func createTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int) {
+func createTopic(m *testcommon.TestConfig, actor Actor, _ uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, actor, "creating new topic")
 	createTopicRequest := &emissionstypes.MsgCreateNewTopic{
 		Creator:         actor.addr,
@@ -43,15 +43,13 @@ func createTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, it
 }
 
 // use actor to fund topic, picked randomly
-func fundTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int) {
+func fundTopic(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, actor, "funding topic")
-	randomTopicId, err := pickRandomTopicId(m)
-	require.NoError(m.T, err)
 	randomBalance, err := pickRandomBalanceLessThanHalf(m, actor)
 	require.NoError(m.T, err)
 	fundTopicRequest := &emissionstypes.MsgFundTopic{
 		Sender:  actor.addr,
-		TopicId: randomTopicId,
+		TopicId: topicId,
 		Amount:  randomBalance,
 	}
 
@@ -62,5 +60,5 @@ func fundTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, iter
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
-	iterationLog(m.T, iteration, actor, " funded topic ", randomTopicId)
+	iterationLog(m.T, iteration, actor, " funded topic ", topicId)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"sync"
 	"testing"
 
 	cosmossdk_io_math "cosmossdk.io/math"
@@ -24,11 +23,12 @@ func iterationLog(t *testing.T, iteration int, a ...any) {
 // human readable name,
 // string bech32 address,
 // and an account with private key etc
+// add a lock to this if you need to broadcast transactions in parallel
+// from actors
 type Actor struct {
 	name string
 	addr string
 	acc  cosmosaccount.Account
-	lock *sync.Mutex
 }
 
 // stringer for actor
@@ -58,11 +58,10 @@ func getMultiAddressName(actor Actor) string {
 
 // the actors can have nonce issues if you parallelize using them,
 // so make sure to check the mutex before sending the tx
+// for now, no mutex
 func broadcastWithActor(m *testcommon.TestConfig, actor Actor, msgs ...sdktypes.Msg) (cosmosclient.Response, error) {
-	actor.lock.Lock()
 	ctx := context.Background()
 	ret, err := m.Client.BroadcastTx(ctx, actor.acc, msgs...)
-	actor.lock.Unlock()
 	return ret, err
 }
 

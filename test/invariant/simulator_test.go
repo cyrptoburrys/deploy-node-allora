@@ -1,8 +1,6 @@
 package invariant_test
 
 import (
-	"sync"
-
 	testcommon "github.com/allora-network/allora-chain/test/common"
 )
 
@@ -23,7 +21,6 @@ func simulate(
 		name: getFaucetName(m.Seed),
 		addr: m.FaucetAddr,
 		acc:  m.FaucetAcc,
-		lock: &sync.Mutex{},
 	}
 	preFundAmount, err := getPreFundAmount(m, faucet, numActors)
 	if err != nil {
@@ -39,23 +36,24 @@ func simulate(
 		m.T.Fatal(err)
 	}
 	simulationData := SimulationData{
-		lock:                sync.RWMutex{},
 		maxTopics:           uint64(topicsMax),
 		maxReputersPerTopic: maxReputersPerTopic,
 		maxWorkersPerTopic:  maxWorkersPerTopic,
 		epochLength:         int64(epochLength),
 		actors:              actorsList,
+		registeredWorkers:   testcommon.NewRandomKeyMap[Registration](m.Client.Rand),
+		registeredReputers:  testcommon.NewRandomKeyMap[Registration](m.Client.Rand),
 	}
 
 	// iteration 0, always create a topic to start
-	createTopic(m, faucet, &simulationData, 0)
+	createTopic(m, faucet, 0, &simulationData, 0)
 
 	// every iteration, pick an actor,
 	// then pick a state transition function for that actor to do
 	for i := 1; i < maxIterations; i++ {
-		actorNum := m.Client.Rand.Intn(numActors)
-		stateTransitionFunc := pickActorStateTransition(m, i, actorsList[actorNum], &simulationData)
-		stateTransitionFunc(m, actorsList[actorNum], &simulationData, i)
+		stateTransition := pickStateTransition(m, i, &simulationData)
+		actor, topicId := pickActorAndTopicIdForStateTransition(m, stateTransition, &simulationData, numActors)
+		stateTransition.f(m, actor, topicId, &simulationData, i)
 		if err != nil {
 			m.T.Fatal(err)
 		}

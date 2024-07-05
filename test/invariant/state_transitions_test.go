@@ -2,11 +2,12 @@ package invariant_test
 
 import (
 	testcommon "github.com/allora-network/allora-chain/test/common"
+	"github.com/stretchr/testify/require"
 )
 
 // Every function responsible for doing a state transition
 // should adhere to this function signature
-type StateTransitionFunc func(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int)
+type StateTransitionFunc func(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int)
 
 // keep track of the name of the state transition as well as the function
 type StateTransition struct {
@@ -39,6 +40,9 @@ func allTransitions() []StateTransition {
 		{"createTopic", createTopic},
 		{"fundTopic", fundTopic},
 		{"registerWorker", registerWorker},
+		{"registerReputer", registerReputer},
+		{"unregisterWorker", unregisterWorker},
+		{"unregisterReputer", unregisterReputer},
 	}
 }
 
@@ -58,33 +62,52 @@ func allTransitions() []StateTransition {
 // collectDelegatorRewards: delegateStake, fundTopic, InsertBulkWorkerPayload, InsertBulkReputerPayload
 // InsertBulkWorkerPayload: RegisterWorkerForTopic, FundTopic
 // InsertBulkReputerPayload: RegisterReputerForTopic, InsertBulkWorkerPayload
-func isPossibleTransition( /*actor*/ _ Actor, _ *SimulationData, transition StateTransition) bool {
+func isPossibleTransition(data *SimulationData, transition StateTransition) bool {
 	switch transition.name {
-	/*case "fundTopic":
-		return fundTopicPossible(data)
-	case "registerWorker":
-		return registerWorkerPossible(data)
-	*/
+	case "unregisterWorker":
+		return possibleUnregisterWorker(data)
+	case "unregisterReputer":
+		return possibleUnregisterReputer(data)
 	default:
 		return true
 	}
 }
 
-// pickActorStateTransition picks a random state transition to take and returns which one it picked.
-func pickActorStateTransition(
+// pickStateTransition picks a random state transition to take and returns which one it picked.
+func pickStateTransition(
 	m *testcommon.TestConfig,
 	iteration int,
-	actor Actor,
 	data *SimulationData,
-) StateTransitionFunc {
+) StateTransition {
 	transitions := allTransitions()
 	for {
 		randIndex := m.Client.Rand.Intn(len(transitions))
 		selectedTransition := transitions[randIndex]
-		if isPossibleTransition(actor, data, selectedTransition) {
-			return selectedTransition.f
+		if isPossibleTransition(data, selectedTransition) {
+			return selectedTransition
 		} else {
-			iterationLog(m.T, iteration, "Transition not possible: ", actor, " ", selectedTransition.name)
+			iterationLog(m.T, iteration, "Transition not possible: ", selectedTransition.name)
 		}
+	}
+}
+
+// pickActorAndTopicIdForStateTransition picks a random actor
+// who is able to take the state transition and returns which one it picked.
+func pickActorAndTopicIdForStateTransition(
+	m *testcommon.TestConfig,
+	transition StateTransition,
+	data *SimulationData,
+	numActors int,
+) (Actor, uint64) {
+	switch transition.name {
+	case "unregisterWorker":
+		return data.pickRandomWorkerToUnregister()
+	case "unregisterReputer":
+		return data.pickRandomReputerToUnregister()
+	default:
+		randomTopicId, err := pickRandomTopicId(m)
+		require.NoError(m.T, err)
+		randomActor := data.actors[m.Client.Rand.Intn(numActors)]
+		return randomActor, randomTopicId
 	}
 }

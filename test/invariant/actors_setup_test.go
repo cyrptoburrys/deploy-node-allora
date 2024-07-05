@@ -3,7 +3,6 @@ package invariant_test
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	cosmossdk_io_math "cosmossdk.io/math"
 	"github.com/allora-network/allora-chain/app/params"
@@ -29,7 +28,6 @@ func createNewActor(m *testcommon.TestConfig, numActors int) Actor {
 		name: actorName,
 		addr: actorAddress,
 		acc:  actorAccount,
-		lock: &sync.Mutex{},
 	}
 }
 
