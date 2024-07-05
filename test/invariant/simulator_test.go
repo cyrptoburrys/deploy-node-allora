@@ -41,8 +41,8 @@ func simulate(
 		maxWorkersPerTopic:  maxWorkersPerTopic,
 		epochLength:         int64(epochLength),
 		actors:              actorsList,
-		registeredWorkers:   testcommon.NewRandomKeyMap[Registration](m.Client.Rand),
-		registeredReputers:  testcommon.NewRandomKeyMap[Registration](m.Client.Rand),
+		registeredWorkers:   testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
+		registeredReputers:  testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
 	}
 
 	// iteration 0, always create a topic to start

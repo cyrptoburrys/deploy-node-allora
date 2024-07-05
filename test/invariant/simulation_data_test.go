@@ -14,8 +14,8 @@ type SimulationData struct {
 	maxWorkersPerTopic  int
 	epochLength         int64
 	actors              []Actor
-	registeredWorkers   *testcommon.RandomKeyMap[Registration]
-	registeredReputers  *testcommon.RandomKeyMap[Registration]
+	registeredWorkers   *testcommon.RandomKeyMap[Registration, struct{}]
+	registeredReputers  *testcommon.RandomKeyMap[Registration, struct{}]
 }
 
 type Registration struct {
@@ -28,7 +28,7 @@ func (s *SimulationData) addWorkerRegistration(topicId uint64, actor Actor) {
 	s.registeredWorkers.Insert(Registration{
 		TopicId: topicId,
 		Actor:   actor,
-	})
+	}, struct{}{})
 }
 
 func (s *SimulationData) removeWorkerRegistration(topicId uint64, actor Actor) {
@@ -43,7 +43,7 @@ func (s *SimulationData) addReputerRegistration(topicId uint64, actor Actor) {
 	s.registeredReputers.Insert(Registration{
 		TopicId: topicId,
 		Actor:   actor,
-	})
+	}, struct{}{})
 }
 
 func (s *SimulationData) removeReputerRegistration(topicId uint64, actor Actor) {
