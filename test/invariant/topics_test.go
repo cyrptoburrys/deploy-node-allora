@@ -3,17 +3,15 @@ package invariant_test
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	alloraMath "github.com/allora-network/allora-chain/math"
-	testCommon "github.com/allora-network/allora-chain/test/common"
+	testcommon "github.com/allora-network/allora-chain/test/common"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	"github.com/stretchr/testify/require"
 )
 
 // Use actor to create a new topic
-func createTopic(wg *sync.WaitGroup, m *testCommon.TestConfig, actor Actor, data *SimulationData, iteration int) {
-	defer wg.Done()
+func createTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, actor, "creating new topic")
 	createTopicRequest := &emissionstypes.MsgCreateNewTopic{
 		Creator:         actor.addr,
@@ -41,7 +39,28 @@ func createTopic(wg *sync.WaitGroup, m *testCommon.TestConfig, actor Actor, data
 	err = txResp.Decode(createTopicResponse)
 	require.NoError(m.T, err)
 
-	incrementCountTopics(data)
-
 	iterationLog(m.T, iteration, actor, " created topic ", createTopicResponse.TopicId)
+}
+
+// use actor to fund topic, picked randomly
+func fundTopic(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int) {
+	iterationLog(m.T, iteration, actor, "funding topic")
+	randomTopicId, err := pickRandomTopicId(m)
+	require.NoError(m.T, err)
+	randomBalance, err := pickRandomBalanceLessThanHalf(m, actor)
+	require.NoError(m.T, err)
+	fundTopicRequest := &emissionstypes.MsgFundTopic{
+		Sender:  actor.addr,
+		TopicId: randomTopicId,
+		Amount:  randomBalance,
+	}
+
+	txResp, err := broadcastWithActor(m, actor, fundTopicRequest)
+	require.NoError(m.T, err)
+
+	ctx := context.Background()
+	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
+	require.NoError(m.T, err)
+
+	iterationLog(m.T, iteration, actor, " funded topic ", randomTopicId)
 }

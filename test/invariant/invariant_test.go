@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	testCommon "github.com/allora-network/allora-chain/test/common"
+	testcommon "github.com/allora-network/allora-chain/test/common"
 )
 
 func TestInvariantTestSuite(t *testing.T) {
@@ -19,11 +19,11 @@ func TestInvariantTestSuite(t *testing.T) {
 
 	t.Log(">>> Setting up connection to local node <<<")
 
-	seed := testCommon.LookupEnvInt(t, "SEED", 1)
-	rpcMode := testCommon.LookupRpcMode(t, "RPC_MODE", testCommon.SingleRpc)
-	rpcEndpoints := testCommon.LookupEnvStringArray("RPC_URLS", []string{"http://localhost:26657"})
+	seed := testcommon.LookupEnvInt(t, "SEED", 1)
+	rpcMode := testcommon.LookupRpcMode(t, "RPC_MODE", testcommon.SingleRpc)
+	rpcEndpoints := testcommon.LookupEnvStringArray("RPC_URLS", []string{"http://localhost:26657"})
 
-	testConfig := testCommon.NewTestConfig(
+	testConfig := testcommon.NewTestConfig(
 		t,
 		rpcMode,
 		rpcEndpoints,
@@ -32,12 +32,12 @@ func TestInvariantTestSuite(t *testing.T) {
 	)
 
 	// Read env vars with defaults
-	maxIterations := testCommon.LookupEnvInt(t, "MAX_ITERATIONS", 1000)
-	numActors := testCommon.LookupEnvInt(t, "NUM_ACTORS", 100)
-	maxReputersPerTopic := testCommon.LookupEnvInt(t, "MAX_REPUTERS_PER_TOPIC", 20)
-	maxWorkersPerTopic := testCommon.LookupEnvInt(t, "MAX_WORKERS_PER_TOPIC", 20)
-	topicsMax := testCommon.LookupEnvInt(t, "TOPICS_MAX", 100)
-	epochLength := testCommon.LookupEnvInt(t, "EPOCH_LENGTH", 12)
+	maxIterations := testcommon.LookupEnvInt(t, "MAX_ITERATIONS", 1000)
+	numActors := testcommon.LookupEnvInt(t, "NUM_ACTORS", 100)
+	maxReputersPerTopic := testcommon.LookupEnvInt(t, "MAX_REPUTERS_PER_TOPIC", 20)
+	maxWorkersPerTopic := testcommon.LookupEnvInt(t, "MAX_WORKERS_PER_TOPIC", 20)
+	topicsMax := testcommon.LookupEnvInt(t, "TOPICS_MAX", 100)
+	epochLength := testcommon.LookupEnvInt(t, "EPOCH_LENGTH", 12) // in blocks
 
 	t.Log("Max Actors: ", numActors)
 	t.Log("Max Iterations: ", maxIterations)

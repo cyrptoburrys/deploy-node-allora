@@ -1,14 +1,12 @@
 package invariant_test
 
 import (
-	"sync"
-
-	testCommon "github.com/allora-network/allora-chain/test/common"
+	testcommon "github.com/allora-network/allora-chain/test/common"
 )
 
 // Every function responsible for doing a state transition
 // should adhere to this function signature
-type StateTransitionFunc func(wg *sync.WaitGroup, m *testCommon.TestConfig, actor Actor, data *SimulationData, iteration int)
+type StateTransitionFunc func(m *testcommon.TestConfig, actor Actor, data *SimulationData, iteration int)
 
 // keep track of the name of the state transition as well as the function
 type StateTransition struct {
@@ -39,6 +37,8 @@ type StateTransition struct {
 func allTransitions() []StateTransition {
 	return []StateTransition{
 		{"createTopic", createTopic},
+		{"fundTopic", fundTopic},
+		{"registerWorker", registerWorker},
 	}
 }
 
@@ -58,13 +58,21 @@ func allTransitions() []StateTransition {
 // collectDelegatorRewards: delegateStake, fundTopic, InsertBulkWorkerPayload, InsertBulkReputerPayload
 // InsertBulkWorkerPayload: RegisterWorkerForTopic, FundTopic
 // InsertBulkReputerPayload: RegisterReputerForTopic, InsertBulkWorkerPayload
-func isPossibleTransition(actor Actor, data *SimulationData, transition StateTransition) bool {
-	return true
+func isPossibleTransition( /*actor*/ _ Actor, _ *SimulationData, transition StateTransition) bool {
+	switch transition.name {
+	/*case "fundTopic":
+		return fundTopicPossible(data)
+	case "registerWorker":
+		return registerWorkerPossible(data)
+	*/
+	default:
+		return true
+	}
 }
 
 // pickActorStateTransition picks a random state transition to take and returns which one it picked.
 func pickActorStateTransition(
-	m *testCommon.TestConfig,
+	m *testcommon.TestConfig,
 	iteration int,
 	actor Actor,
 	data *SimulationData,

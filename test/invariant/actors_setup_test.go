@@ -3,16 +3,17 @@ package invariant_test
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	cosmossdk_io_math "cosmossdk.io/math"
 	"github.com/allora-network/allora-chain/app/params"
-	testCommon "github.com/allora-network/allora-chain/test/common"
+	testcommon "github.com/allora-network/allora-chain/test/common"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 // creates a new actor and registers them in the nodes account registry
-func createNewActor(m *testCommon.TestConfig, numActors int) Actor {
+func createNewActor(m *testcommon.TestConfig, numActors int) Actor {
 	actorName := getActorName(m.Seed, numActors)
 	actorAccount, _, err := m.Client.AccountRegistryCreate(actorName)
 	if err != nil {
@@ -28,11 +29,12 @@ func createNewActor(m *testCommon.TestConfig, numActors int) Actor {
 		name: actorName,
 		addr: actorAddress,
 		acc:  actorAccount,
+		lock: &sync.Mutex{},
 	}
 }
 
 // creates a list of actors both as a map and a slice, returns both
-func createActors(m *testCommon.TestConfig, numToCreate int) []Actor {
+func createActors(m *testcommon.TestConfig, numToCreate int) []Actor {
 	actorsList := make([]Actor, numToCreate)
 	for i := 0; i < numToCreate; i++ {
 		actorsList[i] = createNewActor(m, i)
@@ -42,7 +44,7 @@ func createActors(m *testCommon.TestConfig, numToCreate int) []Actor {
 
 // fund every target address from the sender in amount coins
 func fundActors(
-	m *testCommon.TestConfig,
+	m *testcommon.TestConfig,
 	sender Actor,
 	targets []Actor,
 	amount cosmossdk_io_math.Int,
@@ -101,15 +103,13 @@ func fundActors(
 
 // get the amount of money to give each actor in the simulation
 // based on how much money the faucet currently has
-func getPreFundAmount(m *testCommon.TestConfig, numActors int) (cosmossdk_io_math.Int, error) {
-	ctx := context.Background()
-	faucetBal, err := m.Client.QueryBank().
-		Balance(ctx, banktypes.NewQueryBalanceRequest(sdktypes.MustAccAddressFromBech32(m.FaucetAddr), params.DefaultBondDenom))
+func getPreFundAmount(m *testcommon.TestConfig, faucet Actor, numActors int) (cosmossdk_io_math.Int, error) {
+	faucetBal, err := faucet.GetBalance(m)
 	if err != nil {
 		return cosmossdk_io_math.ZeroInt(), err
 	}
 	// divide by 10 so you can at least run 10 runs
-	amountForThisRun := faucetBal.Balance.Amount.QuoRaw(int64(10))
+	amountForThisRun := faucetBal.QuoRaw(int64(10))
 	ret := amountForThisRun.QuoRaw(int64(numActors))
 	if ret.Equal(cosmossdk_io_math.ZeroInt()) || ret.IsNegative() {
 		return cosmossdk_io_math.ZeroInt(), fmt.Errorf(
@@ -117,4 +117,15 @@ func getPreFundAmount(m *testCommon.TestConfig, numActors int) (cosmossdk_io_mat
 		)
 	}
 	return ret, nil
+}
+
+// how much money an actor has
+func (a *Actor) GetBalance(m *testcommon.TestConfig) (cosmossdk_io_math.Int, error) {
+	ctx := context.Background()
+	bal, err := m.Client.QueryBank().Balance(ctx, banktypes.NewQueryBalanceRequest(sdktypes.MustAccAddressFromBech32(a.addr), params.DefaultBondDenom))
+	if err != nil {
+		m.T.Logf("Error getting balance of actor %s: %v\n", a.String(), err)
+		return cosmossdk_io_math.ZeroInt(), err
+	}
+	return bal.Balance.Amount, nil
 }

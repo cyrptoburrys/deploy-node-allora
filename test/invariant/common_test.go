@@ -7,7 +7,9 @@ import (
 	"sync"
 	"testing"
 
-	testCommon "github.com/allora-network/allora-chain/test/common"
+	cosmossdk_io_math "cosmossdk.io/math"
+	testcommon "github.com/allora-network/allora-chain/test/common"
+	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ignite/cli/v28/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/v28/ignite/pkg/cosmosclient"
@@ -26,7 +28,7 @@ type Actor struct {
 	name string
 	addr string
 	acc  cosmosaccount.Account
-	lock sync.Mutex
+	lock *sync.Mutex
 }
 
 // stringer for actor
@@ -44,12 +46,46 @@ func getActorName(seed int, actorIndex int) string {
 	return "run" + strconv.Itoa(seed) + "_actor" + strconv.Itoa(actorIndex)
 }
 
+// generate a libp2p key name for the actor
+func getLibP2pKeyName(actor Actor) string {
+	return "libp2p_key" + actor.name
+}
+
+// generate a multiaddress for an actor
+func getMultiAddressName(actor Actor) string {
+	return "multiaddress" + actor.name
+}
+
 // the actors can have nonce issues if you parallelize using them,
 // so make sure to check the mutex before sending the tx
-func broadcastWithActor(m *testCommon.TestConfig, actor Actor, msgs ...sdktypes.Msg) (cosmosclient.Response, error) {
+func broadcastWithActor(m *testcommon.TestConfig, actor Actor, msgs ...sdktypes.Msg) (cosmosclient.Response, error) {
 	actor.lock.Lock()
 	ctx := context.Background()
 	ret, err := m.Client.BroadcastTx(ctx, actor.acc, msgs...)
 	actor.lock.Unlock()
 	return ret, err
+}
+
+// pick a random topic id that is between 1 and the number of topics
+func pickRandomTopicId(m *testcommon.TestConfig) (uint64, error) {
+	ctx := context.Background()
+	numTopicsResponse, err := m.Client.QueryEmissions().GetNextTopicId(ctx, &emissionstypes.QueryNextTopicIdRequest{})
+	if err != nil {
+		return 0, err
+	}
+	ret := m.Client.Rand.Uint64() % numTopicsResponse.NextTopicId
+	if ret == 0 {
+		ret = 1
+	}
+	return ret, nil
+}
+
+// pick a random balance that is less than half of the actors balance
+func pickRandomBalanceLessThanHalf(m *testcommon.TestConfig, actor Actor) (cosmossdk_io_math.Int, error) {
+	balOfActor, err := actor.GetBalance(m)
+	if err != nil {
+		return cosmossdk_io_math.ZeroInt(), err
+	}
+	randomBalance := balOfActor.QuoRaw(2).QuoRaw(m.Client.Rand.Int63() % 1000)
+	return randomBalance, nil
 }
