@@ -11,7 +11,8 @@ import (
 // register actor as a new worker
 func registerWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, "registering ", actor, "as worker in topic id", topicId)
-	txResp, err := broadcastWithActor(m, actor, &emissionstypes.MsgRegister{
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, &emissionstypes.MsgRegister{
 		Sender:       actor.addr,
 		Owner:        actor.addr, // todo pick random other actor
 		LibP2PKey:    getLibP2pKeyName(actor),
@@ -21,7 +22,6 @@ func registerWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, data 
 	})
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
@@ -36,21 +36,21 @@ func registerWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, data 
 }
 
 // determine if this state transition is worth trying based on our knowledge of the state
-func possibleUnregisterWorker(data *SimulationData) bool {
+func anyWorkersRegistered(data *SimulationData) bool {
 	return data.registeredWorkers.Len() > 0
 }
 
 // unregister actor from being a worker
 func unregisterWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, "unregistering ", actor, "as worker in topic id", topicId)
-	txResp, err := broadcastWithActor(m, actor, &emissionstypes.MsgRemoveRegistration{
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, &emissionstypes.MsgRemoveRegistration{
 		Sender:    actor.addr,
 		TopicId:   topicId,
 		IsReputer: false,
 	})
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
@@ -67,7 +67,8 @@ func unregisterWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, dat
 // register actor as a new actor
 func registerReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, "registering ", actor, "as reputer in topic id", topicId)
-	txResp, err := broadcastWithActor(m, actor, &emissionstypes.MsgRegister{
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, &emissionstypes.MsgRegister{
 		Sender:       actor.addr,
 		Owner:        actor.addr, // todo pick random other actor
 		LibP2PKey:    getLibP2pKeyName(actor),
@@ -77,7 +78,6 @@ func registerReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, data
 	})
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
@@ -92,21 +92,21 @@ func registerReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, data
 }
 
 // determine if this state transition is worth trying based on our knowledge of the state
-func possibleUnregisterReputer(data *SimulationData) bool {
+func anyReputersRegistered(data *SimulationData) bool {
 	return data.registeredReputers.Len() > 0
 }
 
 // unregister reputer
 func unregisterReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, data *SimulationData, iteration int) {
 	iterationLog(m.T, iteration, "unregistering ", actor, "as reputer in topic id", topicId)
-	txResp, err := broadcastWithActor(m, actor, &emissionstypes.MsgRemoveRegistration{
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, &emissionstypes.MsgRemoveRegistration{
 		Sender:    actor.addr,
 		TopicId:   topicId,
 		IsReputer: true,
 	})
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 

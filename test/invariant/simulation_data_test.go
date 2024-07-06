@@ -1,53 +1,33 @@
 package invariant_test
 
 import (
-	"strconv"
-
 	cosmossdk_io_math "cosmossdk.io/math"
 	testcommon "github.com/allora-network/allora-chain/test/common"
 )
-
-type StateTransitionCounts struct {
-	createTopic       int
-	fundTopic         int
-	registerWorker    int
-	registerReputer   int
-	unregisterWorker  int
-	unregisterReputer int
-	stakeAsReputer    int
-}
-
-// stringer for state transition counts
-func (s StateTransitionCounts) String() string {
-	return "{\ncreateTopic: " + strconv.Itoa(s.createTopic) + ", " +
-		"\nfundTopic: " + strconv.Itoa(s.fundTopic) + ", " +
-		"\nregisterWorker: " + strconv.Itoa(s.registerWorker) + ", " +
-		"\nregisterReputer: " + strconv.Itoa(s.registerReputer) + ", " +
-		"\nunregisterWorker: " + strconv.Itoa(s.unregisterWorker) + ", " +
-		"\nunregisterReputer: " + strconv.Itoa(s.unregisterReputer) + ", " +
-		"\nstakeAsReputer: " + strconv.Itoa(s.stakeAsReputer) +
-		"\n}"
-}
 
 // SimulationData stores the active set of states we think we're in
 // so that we can choose to take a transition that is valid
 // right now it doesn't need mutexes, if we parallelize this test ever it will
 // to read and write out of the simulation data
 type SimulationData struct {
-	maxTopics           uint64
-	maxReputersPerTopic int
-	maxWorkersPerTopic  int
-	epochLength         int64
-	actors              []Actor
-	counts              StateTransitionCounts
-	registeredWorkers   *testcommon.RandomKeyMap[Registration, struct{}]
-	registeredReputers  *testcommon.RandomKeyMap[Registration, struct{}]
-	reputerStakes       *testcommon.RandomKeyMap[Registration, cosmossdk_io_math.Int]
+	epochLength        int64
+	actors             []Actor
+	counts             StateTransitionCounts
+	registeredWorkers  *testcommon.RandomKeyMap[Registration, struct{}]
+	registeredReputers *testcommon.RandomKeyMap[Registration, struct{}]
+	reputerStakes      *testcommon.RandomKeyMap[Registration, cosmossdk_io_math.Int]
+	delegatorStakes    *testcommon.RandomKeyMap[Delegation, cosmossdk_io_math.Int]
 }
 
 type Registration struct {
 	TopicId uint64
 	Actor   Actor
+}
+
+type Delegation struct {
+	TopicId   uint64
+	Delegator Actor
+	Reputer   Actor
 }
 
 // how many times have we created topics?
@@ -85,6 +65,11 @@ func (s *SimulationData) incrementStakeAsReputerCount() {
 	s.counts.stakeAsReputer++
 }
 
+// how many times have we delegated stake?
+func (s *SimulationData) incrementDelegateStakeCount() {
+	s.counts.delegateStake++
+}
+
 // return the counts of state transitions
 func (s *SimulationData) getCounts() StateTransitionCounts {
 	return s.counts
@@ -120,20 +105,14 @@ func (s *SimulationData) removeReputerRegistration(topicId uint64, actor Actor) 
 	})
 }
 
-// pickRandomWorkerToUnregister picks a random worker to unregister
-func (s *SimulationData) pickRandomWorkerToUnregister() (Actor, uint64) {
+// pickRandomRegisteredWorker picks a random worker that is currently registered
+func (s *SimulationData) pickRandomRegisteredWorker() (Actor, uint64) {
 	ret := s.registeredWorkers.RandomKey()
 	return ret.Actor, ret.TopicId
 }
 
-// pickRandomReputerToUnregister picks a random reputer to unregister
-func (s *SimulationData) pickRandomReputerToUnregister() (Actor, uint64) {
-	ret := s.registeredReputers.RandomKey()
-	return ret.Actor, ret.TopicId
-}
-
-// pickRandomReputerToStake picks a random reputer to stake
-func (s *SimulationData) pickRandomReputerToStake() (Actor, uint64) {
+// pickRandomRegisteredReputer picks a random reputer that is currently registered
+func (s *SimulationData) pickRandomRegisteredReputer() (Actor, uint64) {
 	ret := s.registeredReputers.RandomKey()
 	return ret.Actor, ret.TopicId
 }
@@ -150,4 +129,19 @@ func (s *SimulationData) addReputerStake(topicId uint64, actor Actor, amount cos
 	}
 	newValue := prevStake.Add(amount)
 	s.reputerStakes.Upsert(reg, newValue)
+}
+
+// addDelegatorStake adds a delegator stake to the simulation data
+func (s *SimulationData) addDelegatorStake(topicId uint64, delegator Actor, reputer Actor, amount cosmossdk_io_math.Int) {
+	delegation := Delegation{
+		TopicId:   topicId,
+		Delegator: delegator,
+		Reputer:   reputer,
+	}
+	prevStake, exists := s.delegatorStakes.Get(delegation)
+	if !exists {
+		prevStake = cosmossdk_io_math.ZeroInt()
+	}
+	newValue := prevStake.Add(amount)
+	s.delegatorStakes.Upsert(delegation, newValue)
 }

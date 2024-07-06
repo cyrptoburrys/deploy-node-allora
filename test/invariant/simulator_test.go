@@ -10,9 +10,6 @@ func simulate(
 	m *testcommon.TestConfig,
 	maxIterations int,
 	numActors int,
-	maxReputersPerTopic int,
-	maxWorkersPerTopic int,
-	topicsMax int,
 	epochLength int,
 ) {
 	// fund all actors from the faucet with some amount
@@ -37,15 +34,13 @@ func simulate(
 		m.T.Fatal(err)
 	}
 	simulationData := SimulationData{
-		maxTopics:           uint64(topicsMax),
-		maxReputersPerTopic: maxReputersPerTopic,
-		maxWorkersPerTopic:  maxWorkersPerTopic,
-		epochLength:         int64(epochLength),
-		actors:              actorsList,
-		counts:              StateTransitionCounts{},
-		registeredWorkers:   testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
-		registeredReputers:  testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
-		reputerStakes:       testcommon.NewRandomKeyMap[Registration, cosmossdk_io_math.Int](m.Client.Rand),
+		epochLength:        int64(epochLength),
+		actors:             actorsList,
+		counts:             StateTransitionCounts{},
+		registeredWorkers:  testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
+		registeredReputers: testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
+		reputerStakes:      testcommon.NewRandomKeyMap[Registration, cosmossdk_io_math.Int](m.Client.Rand),
+		delegatorStakes:    testcommon.NewRandomKeyMap[Delegation, cosmossdk_io_math.Int](m.Client.Rand),
 	}
 
 	// iteration 0, always create a topic to start
@@ -55,7 +50,7 @@ func simulate(
 	// then pick a state transition function for that actor to do
 	for i := 1; i < maxIterations; i++ {
 		stateTransition := pickStateTransition(m, i, &simulationData)
-		actor, topicId := pickActorAndTopicIdForStateTransition(m, stateTransition, &simulationData, numActors)
+		actor, topicId := pickActorAndTopicIdForStateTransition(m, stateTransition, &simulationData)
 		stateTransition.f(m, actor, topicId, &simulationData, i)
 		if err != nil {
 			m.T.Fatal(err)
@@ -64,5 +59,5 @@ func simulate(
 			m.T.Log("State Transitions Summary:", simulationData.getCounts())
 		}
 	}
-
+	m.T.Log("Final Summary:", simulationData.getCounts())
 }

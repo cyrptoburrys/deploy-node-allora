@@ -1,6 +1,8 @@
 package invariant_test
 
 import (
+	"strconv"
+
 	testcommon "github.com/allora-network/allora-chain/test/common"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +43,33 @@ func allTransitions() []StateTransition {
 		{"unregisterWorker", unregisterWorker},
 		{"unregisterReputer", unregisterReputer},
 		{"stakeAsReputer", stakeAsReputer},
+		{"delegateStake", delegateStake},
 	}
+}
+
+// state transition counts, keep fields sync with allTransitions above
+type StateTransitionCounts struct {
+	createTopic       int
+	fundTopic         int
+	registerWorker    int
+	registerReputer   int
+	unregisterWorker  int
+	unregisterReputer int
+	stakeAsReputer    int
+	delegateStake     int
+}
+
+// stringer for state transition counts
+func (s StateTransitionCounts) String() string {
+	return "{\ncreateTopic: " + strconv.Itoa(s.createTopic) + ", " +
+		"\nfundTopic: " + strconv.Itoa(s.fundTopic) + ", " +
+		"\nregisterWorker: " + strconv.Itoa(s.registerWorker) + ", " +
+		"\nregisterReputer: " + strconv.Itoa(s.registerReputer) + ", " +
+		"\nunregisterWorker: " + strconv.Itoa(s.unregisterWorker) + ", " +
+		"\nunregisterReputer: " + strconv.Itoa(s.unregisterReputer) + ", " +
+		"\nstakeAsReputer: " + strconv.Itoa(s.stakeAsReputer) +
+		"\ndelegateStake: " + strconv.Itoa(s.delegateStake) +
+		"\n}"
 }
 
 // state machine dependencies for valid transitions
@@ -63,11 +91,13 @@ func allTransitions() []StateTransition {
 func isPossibleTransition(data *SimulationData, transition StateTransition) bool {
 	switch transition.name {
 	case "unregisterWorker":
-		return possibleUnregisterWorker(data)
+		return anyWorkersRegistered(data)
 	case "unregisterReputer":
-		return possibleUnregisterReputer(data)
+		return anyReputersRegistered(data)
 	case "stakeAsReputer":
-		return possibleStakeReputer(data)
+		return anyReputersRegistered(data)
+	case "delegateStake":
+		return anyReputersRegistered(data)
 	default:
 		return true
 	}
@@ -91,25 +121,31 @@ func pickStateTransition(
 	}
 }
 
+// pickRandomActor picks a random actor from the list of actors in the simulation data
+func pickRandomActor(m *testcommon.TestConfig, data *SimulationData) Actor {
+	return data.actors[m.Client.Rand.Intn(len(data.actors))]
+}
+
 // pickActorAndTopicIdForStateTransition picks a random actor
 // who is able to take the state transition and returns which one it picked.
 func pickActorAndTopicIdForStateTransition(
 	m *testcommon.TestConfig,
 	transition StateTransition,
 	data *SimulationData,
-	numActors int,
 ) (Actor, uint64) {
 	switch transition.name {
 	case "unregisterWorker":
-		return data.pickRandomWorkerToUnregister()
+		return data.pickRandomRegisteredWorker()
 	case "unregisterReputer":
-		return data.pickRandomReputerToUnregister()
+		return data.pickRandomRegisteredReputer()
 	case "stakeAsReputer":
-		return data.pickRandomReputerToStake()
+		return data.pickRandomRegisteredReputer()
+	case "delegateStake":
+		return data.pickRandomRegisteredReputer()
 	default:
 		randomTopicId, err := pickRandomTopicId(m)
 		require.NoError(m.T, err)
-		randomActor := data.actors[m.Client.Rand.Intn(numActors)]
+		randomActor := pickRandomActor(m, data)
 		return randomActor, randomTopicId
 	}
 }

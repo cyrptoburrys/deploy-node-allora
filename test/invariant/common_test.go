@@ -9,9 +9,7 @@ import (
 	cosmossdk_io_math "cosmossdk.io/math"
 	testcommon "github.com/allora-network/allora-chain/test/common"
 	emissionstypes "github.com/allora-network/allora-chain/x/emissions/types"
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ignite/cli/v28/ignite/pkg/cosmosaccount"
-	"github.com/ignite/cli/v28/ignite/pkg/cosmosclient"
 )
 
 // log wrapper for consistent logging style
@@ -54,15 +52,6 @@ func getLibP2pKeyName(actor Actor) string {
 // generate a multiaddress for an actor
 func getMultiAddressName(actor Actor) string {
 	return "multiaddress" + actor.name
-}
-
-// the actors can have nonce issues if you parallelize using them,
-// so make sure to check the mutex before sending the tx
-// for now, no mutex
-func broadcastWithActor(m *testcommon.TestConfig, actor Actor, msgs ...sdktypes.Msg) (cosmosclient.Response, error) {
-	ctx := context.Background()
-	ret, err := m.Client.BroadcastTx(ctx, actor.acc, msgs...)
-	return ret, err
 }
 
 // pick a random topic id that is between 1 and the number of topics

@@ -28,10 +28,10 @@ func createTopic(m *testcommon.TestConfig, actor Actor, _ uint64, data *Simulati
 		AllowNegative:   true,
 	}
 
-	txResp, err := broadcastWithActor(m, actor, createTopicRequest)
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, createTopicRequest)
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
@@ -54,10 +54,10 @@ func fundTopic(m *testcommon.TestConfig, actor Actor, topicId uint64, data *Simu
 		Amount:  randomBalance,
 	}
 
-	txResp, err := broadcastWithActor(m, actor, fundTopicRequest)
+	ctx := context.Background()
+	txResp, err := m.Client.BroadcastTx(ctx, actor.acc, fundTopicRequest)
 	require.NoError(m.T, err)
 
-	ctx := context.Background()
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
