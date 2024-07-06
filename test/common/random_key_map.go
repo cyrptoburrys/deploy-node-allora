@@ -28,8 +28,8 @@ func (rkm *RandomKeyMap[K, V]) Get(k K) (V, bool) {
 	return valueIndex.v, ok
 }
 
-// Insert element into the map
-func (rkm *RandomKeyMap[K, V]) Insert(k K, v V) {
+// Upsert element into the map
+func (rkm *RandomKeyMap[K, V]) Upsert(k K, v V) {
 	if valueIndex, ok := rkm.m[k]; ok {
 		rkm.m[k] = ValueIndex[V]{v, valueIndex.i}
 		return

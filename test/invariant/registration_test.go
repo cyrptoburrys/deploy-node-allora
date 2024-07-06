@@ -31,6 +31,7 @@ func registerWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, data 
 	require.True(m.T, registerWorkerResponse.Success)
 
 	data.addWorkerRegistration(topicId, actor)
+	data.incrementRegisterWorkerCount()
 	iterationLog(m.T, iteration, "registered ", actor, "as worker in topic id ", topicId)
 }
 
@@ -59,6 +60,7 @@ func unregisterWorker(m *testcommon.TestConfig, actor Actor, topicId uint64, dat
 	require.True(m.T, removeRegistrationResponse.Success)
 
 	data.removeWorkerRegistration(topicId, actor)
+	data.incrementUnregisterWorkerCount()
 	iterationLog(m.T, iteration, "unregistered ", actor, "as worker in topic id ", topicId)
 }
 
@@ -85,6 +87,7 @@ func registerReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, data
 	require.True(m.T, registerWorkerResponse.Success)
 
 	data.addReputerRegistration(topicId, actor)
+	data.incrementRegisterReputerCount()
 	iterationLog(m.T, iteration, "registered ", actor, "as reputer in topic id ", topicId)
 }
 
@@ -113,5 +116,6 @@ func unregisterReputer(m *testcommon.TestConfig, actor Actor, topicId uint64, da
 	require.True(m.T, removeRegistrationResponseMsg.Success)
 
 	data.removeReputerRegistration(topicId, actor)
+	data.incrementUnregisterReputerCount()
 	iterationLog(m.T, iteration, "unregistered ", actor, "as reputer in topic id ", topicId)
 }

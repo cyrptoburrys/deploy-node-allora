@@ -19,22 +19,19 @@ type StateTransition struct {
 //
 // create a new topic,
 // fund a topic some more,
-// stake in a reputer (delegate),
-// stake as a reputer,
 // register as a reputer,
 // register as a worker,
 // unregister as a reputer,
 // unregister as a worker,
+// stake as a reputer,
+// stake in a reputer (delegate),
+// unstake as a reputer,
 // unstake from a reputer (undelegate),
+// cancel the removal of stake (as a reputer),
 // cancel the removal of delegated stake (delegator),
 // collect delegator rewards,
-// unstake as a reputer,
-// cancel the removal of stake (as a reputer),
 // produce an inference (insert a bulk worker payload),
 // produce reputation scores (insert a bulk reputer payload)
-//
-// IMPORTANT: if you change getTransitionNameFromIndex function, you must
-// also change this function to match it!!
 func allTransitions() []StateTransition {
 	return []StateTransition{
 		{"createTopic", createTopic},
@@ -43,6 +40,7 @@ func allTransitions() []StateTransition {
 		{"registerReputer", registerReputer},
 		{"unregisterWorker", unregisterWorker},
 		{"unregisterReputer", unregisterReputer},
+		{"stakeAsReputer", stakeAsReputer},
 	}
 }
 
@@ -51,13 +49,13 @@ func allTransitions() []StateTransition {
 // fundTopic: CreateTopic
 // RegisterWorkerForTopic: CreateTopic
 // RegisterReputerForTopic: CreateTopic
-// stakeReputer: RegisterReputerForTopic, CreateTopic
-// delegateStake: CreateTopic, RegisterReputerForTopic
 // unRegisterReputer: RegisterReputerForTopic
 // unRegisterWorker: RegisterWorkerForTopic
+// stakeReputer: RegisterReputerForTopic, CreateTopic
+// delegateStake: CreateTopic, RegisterReputerForTopic
 // unstakeReputer: stakeReputer
-// cancelStakeRemoval: unstakeReputer
 // unstakeDelegator: delegateStake
+// cancelStakeRemoval: unstakeReputer
 // cancelDelegateStakeRemoval: unstakeDelegator
 // collectDelegatorRewards: delegateStake, fundTopic, InsertBulkWorkerPayload, InsertBulkReputerPayload
 // InsertBulkWorkerPayload: RegisterWorkerForTopic, FundTopic
@@ -68,6 +66,8 @@ func isPossibleTransition(data *SimulationData, transition StateTransition) bool
 		return possibleUnregisterWorker(data)
 	case "unregisterReputer":
 		return possibleUnregisterReputer(data)
+	case "stakeAsReputer":
+		return possibleStakeReputer(data)
 	default:
 		return true
 	}
@@ -104,6 +104,8 @@ func pickActorAndTopicIdForStateTransition(
 		return data.pickRandomWorkerToUnregister()
 	case "unregisterReputer":
 		return data.pickRandomReputerToUnregister()
+	case "stakeAsReputer":
+		return data.pickRandomReputerToStake()
 	default:
 		randomTopicId, err := pickRandomTopicId(m)
 		require.NoError(m.T, err)

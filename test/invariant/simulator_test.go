@@ -1,6 +1,7 @@
 package invariant_test
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	testcommon "github.com/allora-network/allora-chain/test/common"
 )
 
@@ -41,8 +42,10 @@ func simulate(
 		maxWorkersPerTopic:  maxWorkersPerTopic,
 		epochLength:         int64(epochLength),
 		actors:              actorsList,
+		counts:              StateTransitionCounts{},
 		registeredWorkers:   testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
 		registeredReputers:  testcommon.NewRandomKeyMap[Registration, struct{}](m.Client.Rand),
+		reputerStakes:       testcommon.NewRandomKeyMap[Registration, cosmossdk_io_math.Int](m.Client.Rand),
 	}
 
 	// iteration 0, always create a topic to start
@@ -56,6 +59,9 @@ func simulate(
 		stateTransition.f(m, actor, topicId, &simulationData, i)
 		if err != nil {
 			m.T.Fatal(err)
+		}
+		if i%5 == 0 {
+			m.T.Log("State Transitions Summary:", simulationData.getCounts())
 		}
 	}
 

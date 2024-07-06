@@ -39,6 +39,7 @@ func createTopic(m *testcommon.TestConfig, actor Actor, _ uint64, data *Simulati
 	err = txResp.Decode(createTopicResponse)
 	require.NoError(m.T, err)
 
+	data.incrementCreateTopicCount()
 	iterationLog(m.T, iteration, actor, " created topic ", createTopicResponse.TopicId)
 }
 
@@ -60,5 +61,6 @@ func fundTopic(m *testcommon.TestConfig, actor Actor, topicId uint64, data *Simu
 	_, err = m.Client.WaitForTx(ctx, txResp.TxHash)
 	require.NoError(m.T, err)
 
+	data.incrementFundTopicCount()
 	iterationLog(m.T, iteration, actor, " funded topic ", topicId)
 }
