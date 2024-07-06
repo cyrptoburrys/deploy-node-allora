@@ -44,6 +44,7 @@ func allTransitions() []StateTransition {
 		{"unregisterReputer", unregisterReputer},
 		{"stakeAsReputer", stakeAsReputer},
 		{"delegateStake", delegateStake},
+		{"unstakeAsReputer", unstakeAsReputer},
 	}
 }
 
@@ -57,6 +58,7 @@ type StateTransitionCounts struct {
 	unregisterReputer int
 	stakeAsReputer    int
 	delegateStake     int
+	unstakeAsReputer  int
 }
 
 // stringer for state transition counts
@@ -69,6 +71,7 @@ func (s StateTransitionCounts) String() string {
 		"\nunregisterReputer: " + strconv.Itoa(s.unregisterReputer) + ", " +
 		"\nstakeAsReputer: " + strconv.Itoa(s.stakeAsReputer) +
 		"\ndelegateStake: " + strconv.Itoa(s.delegateStake) +
+		"\nunstakeAsReputer: " + strconv.Itoa(s.unstakeAsReputer) +
 		"\n}"
 }
 
@@ -98,6 +101,8 @@ func isPossibleTransition(data *SimulationData, transition StateTransition) bool
 		return anyReputersRegistered(data)
 	case "delegateStake":
 		return anyReputersRegistered(data)
+	case "unstakeAsReputer":
+		return anyReputersStaked(data)
 	default:
 		return true
 	}
@@ -142,6 +147,8 @@ func pickActorAndTopicIdForStateTransition(
 		return data.pickRandomRegisteredReputer()
 	case "delegateStake":
 		return data.pickRandomRegisteredReputer()
+	case "unstakeAsReputer":
+		return data.pickRandomStakedReputer()
 	default:
 		randomTopicId, err := pickRandomTopicId(m)
 		require.NoError(m.T, err)
